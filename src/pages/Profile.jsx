@@ -10,6 +10,7 @@ export default function Profile() {
   const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
+  const [msgType, setMsgType] = useState('success'); // 'success' or 'error'
 
   useEffect(() => {
     (async () => {
@@ -33,17 +34,20 @@ export default function Profile() {
   const save = async () => {
     setSaving(true);
     setMsg('');
+    setMsgType('success');
     try {
       const payload = { ...form };
       // Validate password confirmation if provided
       if (payload.password) {
         if (!payload.confirmPassword) {
           setMsg('Please confirm your new password');
+          setMsgType('error');
           setSaving(false);
           return;
         }
         if (payload.password !== payload.confirmPassword) {
           setMsg('Passwords do not match');
+          setMsgType('error');
           setSaving(false);
           return;
         }
@@ -52,8 +56,10 @@ export default function Profile() {
       if (!payload.confirmPassword) delete payload.confirmPassword;
       await axiosClient.put(`/users/${form.id}`, payload);
       setMsg('Saved');
+      setMsgType('success');
     } catch {
       setMsg('Save failed');
+      setMsgType('error');
     } finally {
       setSaving(false);
     }
@@ -62,8 +68,19 @@ export default function Profile() {
   return (
     <div className="max-w-3xl mx-auto p-6">
       <div className="bg-white rounded-xl shadow ring-1 ring-gray-100 p-6">
-        <h1 className="text-2xl font-semibold mb-4">Profile</h1>
-        {msg && <div className="mb-3 text-sm text-green-700 bg-green-50 border border-green-200 rounded px-3 py-2">{msg}</div>}
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-semibold">Profile</h1>
+          <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-4 py-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={save} disabled={saving}>{saving?'Saving...':'Save'}</button>
+        </div>
+        {msg && (
+          <div className={`mb-3 text-sm rounded px-3 py-2 ${
+            msgType === 'error' 
+              ? 'text-red-700 bg-red-50 border border-red-200' 
+              : 'text-green-700 bg-green-50 border border-green-200'
+          }`}>
+            {msg}
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {['username','firstName','lastName','email','doB','password','confirmPassword'].map((key)=> (
           <div key={key}>
@@ -94,9 +111,6 @@ export default function Profile() {
             </div>
           </div>
         )}
-        <div className="flex justify-end">
-          <button className="mt-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md px-4 py-2 transition-colors" onClick={save} disabled={saving}>{saving?'Saving...':'Save'}</button>
-        </div>
       </div>
     </div>
   );
