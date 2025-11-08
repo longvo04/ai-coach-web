@@ -1,16 +1,50 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { validateUsername } from '../utils/validation';
 
 export default function Login() {
   const { login, loading } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({ username: '', password: '' });
+
+  const handleFieldChange = (field, value) => {
+    setForm(v => ({ ...v, [field]: value }));
+    if (fieldErrors[field]) {
+      setFieldErrors(v => ({ ...v, [field]: '' }));
+    }
+    if (field === 'username' && value) {
+      const validation = validateUsername(value);
+      if (!validation.isValid) {
+        setFieldErrors(v => ({ ...v, username: validation.error }));
+      } else {
+        setFieldErrors(v => ({ ...v, username: '' }));
+      }
+    }
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({ username: '', password: '' });
+
+    // Validate username
+    if (form.username) {
+      const usernameValidation = validateUsername(form.username);
+      if (!usernameValidation.isValid) {
+        setFieldErrors(v => ({ ...v, username: usernameValidation.error }));
+        setError(usernameValidation.error);
+        return;
+      }
+    }
+
+    if (!form.username || !form.password) {
+      setError('Please enter username and password');
+      return;
+    }
+
     try {
       await login(form.username, form.password);
       navigate('/upload');
@@ -30,11 +64,23 @@ export default function Login() {
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-            <input className="w-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md px-3 py-2 outline-none transition" value={form.username} onChange={(e)=>setForm(v=>({...v, username: e.target.value}))} required />
+            <input 
+              className={`w-full border ${fieldErrors.username ? 'border-red-500' : 'border-gray-300'} focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md px-3 py-2 outline-none transition`} 
+              value={form.username} 
+              onChange={(e)=>handleFieldChange('username', e.target.value)} 
+              required 
+            />
+            {fieldErrors.username && <p className="text-red-600 text-xs mt-1">{fieldErrors.username}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input type="password" className="w-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md px-3 py-2 outline-none transition" value={form.password} onChange={(e)=>setForm(v=>({...v, password: e.target.value}))} required />
+            <input 
+              type="password" 
+              className="w-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md px-3 py-2 outline-none transition" 
+              value={form.password} 
+              onChange={(e)=>handleFieldChange('password', e.target.value)} 
+              required 
+            />
           </div>
           <div className="flex items-center justify-between">
             <Link to="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700">
