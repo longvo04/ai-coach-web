@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import axiosClient from '../api/axiosClient';
+import { validateUsername, validatePassword, validateDateOfBirth, validatePasswordConfirmation } from '../utils/validation';
 
 export default function Register() {
   const { login } = useAuth();
@@ -17,18 +18,94 @@ export default function Register() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({
+    username: '',
+    password: '',
+    confirmPassword: '',
+    doB: ''
+  });
+
+  const handleFieldChange = (field, value) => {
+    setForm(v => ({ ...v, [field]: value }));
+    
+    // Clear field error when user starts typing
+    if (fieldErrors[field]) {
+      setFieldErrors(v => ({ ...v, [field]: '' }));
+    }
+
+    // Real-time validation for specific fields
+    if (field === 'username') {
+      const validation = validateUsername(value);
+      if (!validation.isValid && value) {
+        setFieldErrors(v => ({ ...v, username: validation.error }));
+      } else {
+        setFieldErrors(v => ({ ...v, username: '' }));
+      }
+    } else if (field === 'password') {
+      const validation = validatePassword(value);
+      if (!validation.isValid && value) {
+        setFieldErrors(v => ({ ...v, password: validation.error }));
+      } else {
+        setFieldErrors(v => ({ ...v, password: '' }));
+      }
+      // Also re-validate confirmPassword if it exists
+      if (form.confirmPassword) {
+        const confirmValidation = validatePasswordConfirmation(value, form.confirmPassword);
+        if (!confirmValidation.isValid) {
+          setFieldErrors(v => ({ ...v, confirmPassword: confirmValidation.error }));
+        } else {
+          setFieldErrors(v => ({ ...v, confirmPassword: '' }));
+        }
+      }
+    } else if (field === 'confirmPassword') {
+      const validation = validatePasswordConfirmation(form.password, value);
+      if (!validation.isValid && value) {
+        setFieldErrors(v => ({ ...v, confirmPassword: validation.error }));
+      } else {
+        setFieldErrors(v => ({ ...v, confirmPassword: '' }));
+      }
+    } else if (field === 'doB') {
+      const validation = validateDateOfBirth(value);
+      if (!validation.isValid && value) {
+        setFieldErrors(v => ({ ...v, doB: validation.error }));
+      } else {
+        setFieldErrors(v => ({ ...v, doB: '' }));
+      }
+    }
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({ username: '', password: '', confirmPassword: '', doB: '' });
 
-    if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match');
+    // Validate all fields
+    const usernameValidation = validateUsername(form.username);
+    const passwordValidation = validatePassword(form.password);
+    const dobValidation = validateDateOfBirth(form.doB);
+    const confirmPasswordValidation = validatePasswordConfirmation(form.password, form.confirmPassword);
+
+    if (!usernameValidation.isValid) {
+      setFieldErrors(v => ({ ...v, username: usernameValidation.error }));
+      setError(usernameValidation.error);
       return;
     }
 
-    if (form.password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (!passwordValidation.isValid) {
+      setFieldErrors(v => ({ ...v, password: passwordValidation.error }));
+      setError(passwordValidation.error);
+      return;
+    }
+
+    if (!dobValidation.isValid) {
+      setFieldErrors(v => ({ ...v, doB: dobValidation.error }));
+      setError(dobValidation.error);
+      return;
+    }
+
+    if (!confirmPasswordValidation.isValid) {
+      setFieldErrors(v => ({ ...v, confirmPassword: confirmPasswordValidation.error }));
+      setError(confirmPasswordValidation.error);
       return;
     }
 
@@ -64,32 +141,62 @@ export default function Register() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-              <input className="w-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md px-3 py-2 outline-none transition" value={form.firstName} onChange={(e)=>setForm(v=>({...v, firstName: e.target.value}))} required />
+              <input className="w-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md px-3 py-2 outline-none transition" value={form.firstName} onChange={(e)=>handleFieldChange('firstName', e.target.value)} required />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-              <input className="w-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md px-3 py-2 outline-none transition" value={form.lastName} onChange={(e)=>setForm(v=>({...v, lastName: e.target.value}))} required />
+              <input className="w-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md px-3 py-2 outline-none transition" value={form.lastName} onChange={(e)=>handleFieldChange('lastName', e.target.value)} required />
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input type="email" className="w-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md px-3 py-2 outline-none transition" value={form.email} onChange={(e)=>setForm(v=>({...v, email: e.target.value}))} required />
+            <input type="email" className="w-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md px-3 py-2 outline-none transition" value={form.email} onChange={(e)=>handleFieldChange('email', e.target.value)} required />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
-            <input type="date" className="w-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md px-3 py-2 outline-none transition" value={form.doB} onChange={(e)=>setForm(v=>({...v, doB: e.target.value}))} required />
+            <input 
+              type="date" 
+              className={`w-full border ${fieldErrors.doB ? 'border-red-500' : 'border-gray-300'} focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md px-3 py-2 outline-none transition`} 
+              value={form.doB} 
+              onChange={(e)=>handleFieldChange('doB', e.target.value)} 
+              required 
+            />
+            {fieldErrors.doB && <p className="text-red-600 text-xs mt-1">{fieldErrors.doB}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-            <input className="w-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md px-3 py-2 outline-none transition" value={form.username} onChange={(e)=>setForm(v=>({...v, username: e.target.value}))} required />
+            <input 
+              className={`w-full border ${fieldErrors.username ? 'border-red-500' : 'border-gray-300'} focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md px-3 py-2 outline-none transition`} 
+              value={form.username} 
+              onChange={(e)=>handleFieldChange('username', e.target.value)} 
+              required 
+            />
+            {fieldErrors.username && <p className="text-red-600 text-xs mt-1">{fieldErrors.username}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input type="password" className="w-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md px-3 py-2 outline-none transition" value={form.password} onChange={(e)=>setForm(v=>({...v, password: e.target.value}))} required />
+            <input 
+              type="password" 
+              className={`w-full border ${fieldErrors.password ? 'border-red-500' : 'border-gray-300'} focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md px-3 py-2 outline-none transition`} 
+              value={form.password} 
+              onChange={(e)=>handleFieldChange('password', e.target.value)} 
+              required 
+            />
+            {fieldErrors.password && <p className="text-red-600 text-xs mt-1">{fieldErrors.password}</p>}
+            {!fieldErrors.password && form.password && (
+              <p className="text-gray-500 text-xs mt-1">Password must be at least 8 characters</p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-            <input type="password" className="w-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md px-3 py-2 outline-none transition" value={form.confirmPassword} onChange={(e)=>setForm(v=>({...v, confirmPassword: e.target.value}))} required />
+            <input 
+              type="password" 
+              className={`w-full border ${fieldErrors.confirmPassword ? 'border-red-500' : 'border-gray-300'} focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md px-3 py-2 outline-none transition`} 
+              value={form.confirmPassword} 
+              onChange={(e)=>handleFieldChange('confirmPassword', e.target.value)} 
+              required 
+            />
+            {fieldErrors.confirmPassword && <p className="text-red-600 text-xs mt-1">{fieldErrors.confirmPassword}</p>}
           </div>
           <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-md py-2.5 transition-colors" disabled={loading}>
             {loading ? 'Creating account…' : 'Register'}

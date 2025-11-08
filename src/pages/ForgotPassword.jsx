@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
+import { validatePassword } from '../utils/validation';
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ export default function ForgotPassword() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -33,13 +35,36 @@ export default function ForgotPassword() {
     }
   };
 
+  const handlePasswordChange = (value) => {
+    setNewPassword(value);
+    setPasswordError('');
+    
+    if (value) {
+      const validation = validatePassword(value);
+      if (!validation.isValid) {
+        setPasswordError(validation.error);
+      }
+    }
+  };
+
   const onReset = async (e) => {
     e.preventDefault();
     setError('');
+    setPasswordError('');
+
     if (!otp || !newPassword) {
       setError('Please enter the OTP and your new password');
       return;
     }
+
+    // Validate password
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
+      setPasswordError(passwordValidation.error);
+      setError(passwordValidation.error);
+      return;
+    }
+
     setLoading(true);
     try {
       // 1) Confirm OTP to get a temporary token
@@ -118,11 +143,15 @@ export default function ForgotPassword() {
               <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
               <input
                 type="password"
-                className="w-full border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md px-3 py-2 outline-none transition"
+                className={`w-full border ${passwordError ? 'border-red-500' : 'border-gray-300'} focus:border-blue-500 focus:ring-2 focus:ring-blue-100 rounded-md px-3 py-2 outline-none transition`}
                 value={newPassword}
-                onChange={(e)=>setNewPassword(e.target.value)}
+                onChange={(e)=>handlePasswordChange(e.target.value)}
                 required
               />
+              {passwordError && <p className="text-red-600 text-xs mt-1">{passwordError}</p>}
+              {!passwordError && newPassword && (
+                <p className="text-gray-500 text-xs mt-1">Password must be at least 8 characters</p>
+              )}
             </div>
             <button type="submit" className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-md py-2.5 transition-colors" disabled={loading}>
               {loading ? 'Resetting…' : 'Set New Password'}
