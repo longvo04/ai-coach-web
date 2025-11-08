@@ -11,6 +11,7 @@ import Goals from '../pages/Goals';
 import GoalForm from '../pages/GoalForm';
 import History from '../pages/History';
 import Feedback from '../pages/Feedback';
+import About from '../pages/About';
 import NavBar from '../components/NavBar';
 
 function PrivateRoute({ children }) {
@@ -44,6 +45,7 @@ export default function AppRouter() {
         <Route path="/feedback" element={<PrivateRoute><Feedback /></PrivateRoute>} />
         <Route path="/confirm-otp" element={<ConfirmOTP />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/about" element={<About />} />
         <Route path="/" element={<Navigate to="/upload" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
