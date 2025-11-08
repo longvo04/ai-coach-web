@@ -15,15 +15,18 @@ export default function NavBar() {
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <Link to="/upload" className="text-lg font-semibold tracking-tight hover:text-blue-600 transition-colors">AI Coach</Link>
-          {token && (
-            <nav className="hidden sm:flex items-center gap-4 text-sm text-gray-700">
-              <Link to="/upload" className="hover:text-blue-600 transition-colors">Upload</Link>
-              <Link to="/goals" className="hover:text-blue-600 transition-colors">Goals</Link>
-              <Link to="/history" className="hover:text-blue-600 transition-colors">History</Link>
-              <Link to="/feedback" className="hover:text-blue-600 transition-colors">Feedback</Link>
-              <Link to="/profile" className="hover:text-blue-600 transition-colors">Profile</Link>
-            </nav>
-          )}
+          <nav className="hidden sm:flex items-center gap-4 text-sm text-gray-700">
+            <Link to="/about" className="hover:text-blue-600 transition-colors">About</Link>
+            {token && (
+              <>
+                <Link to="/upload" className="hover:text-blue-600 transition-colors">Upload</Link>
+                <Link to="/goals" className="hover:text-blue-600 transition-colors">Goals</Link>
+                <Link to="/history" className="hover:text-blue-600 transition-colors">History</Link>
+                <Link to="/feedback" className="hover:text-blue-600 transition-colors">Feedback</Link>
+                <Link to="/profile" className="hover:text-blue-600 transition-colors">Profile</Link>
+              </>
+            )}
+          </nav>
         </div>
         <div>
           {token ? (
