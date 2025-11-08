@@ -55,19 +55,20 @@ export default function GoalPrompt({ cvAnalysis }) {
                                 userId: user.id,
                             },
                         },
+                        { timeout: 60000 },
                     )
+
+                    // Nếu code 1008 => retry
+                    if (res.data?.code === 1008) {
+                        console.log(`Retrying... (${attempt}/${maxRetries})`)
+                        await new Promise((r) => setTimeout(r, retryDelay))
+                        continue
+                    }
 
                     // Nếu trả về đúng format (mảng kế hoạch), dừng retry
                     if (Array.isArray(res.data)) {
                         data = res.data
                         break
-                    }
-
-                    // Nếu code 1008 => retry
-                    if (res.data?.code === 1008) {
-                        console.warn(`Retrying... (${attempt}/${maxRetries})`)
-                        await new Promise((r) => setTimeout(r, retryDelay))
-                        continue
                     }
 
                     // Trường hợp lỗi khác thì thoát
