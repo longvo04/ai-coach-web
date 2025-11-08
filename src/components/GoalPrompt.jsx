@@ -28,13 +28,67 @@ export default function GoalPrompt({ cvAnalysis }) {
         setLoading(true)
         try {
             const iso = new Date(deadlineLocal).toISOString().replace('Z', '')
-            const { data } = await axiosClient.post(
-                `/gemini/plan`,
-                { cvAnalysis },
-                {
-                    params: { target, complete_time: iso, userId: user.id },
-                },
-            )
+
+            // const { data } = await axiosClient.post(
+            //     `/gemini/plan`,
+            //     { cvAnalysis },
+            //     {
+            //         params: { target, complete_time: iso, userId: user.id },
+            //     },
+            // )
+            // navigate('/goal-form', { state: { plan: data, cvAnalysis } })
+
+            let data = null
+            const maxRetries = 5
+            const retryDelay = 1000 // 1 giây
+            let attempt = 0
+            while (attempt < maxRetries) {
+                attempt++
+                try {
+                    const res = await axiosClient.post(
+                        `/gemini/plan`,
+                        { cvAnalysis },
+                        {
+                            params: {
+                                target,
+                                complete_time: iso,
+                                userId: user.id,
+                            },
+                        },
+                    )
+
+                    // Nếu trả về đúng format (mảng kế hoạch), dừng retry
+                    if (Array.isArray(res.data)) {
+                        data = res.data
+                        break
+                    }
+
+                    // Nếu code 1008 => retry
+                    if (res.data?.code === 1008) {
+                        console.warn(`Retrying... (${attempt}/${maxRetries})`)
+                        await new Promise((r) => setTimeout(r, retryDelay))
+                        continue
+                    }
+
+                    // Trường hợp lỗi khác thì thoát
+                    throw new Error('Unexpected response format')
+                } catch (err) {
+                    // Nếu request lỗi mạng hoặc lỗi khác, cũng thử lại
+                    if (attempt < maxRetries) {
+                        console.warn(
+                            `Retrying after error... (${attempt}/${maxRetries})`,
+                        )
+                        await new Promise((r) => setTimeout(r, retryDelay))
+                    } else {
+                        throw err
+                    }
+                }
+            }
+
+            if (!data) {
+                throw new Error('Failed after retries')
+            }
+
             navigate('/goal-form', { state: { plan: data, cvAnalysis } })
         } catch {
             setError('Failed to generate plan')
