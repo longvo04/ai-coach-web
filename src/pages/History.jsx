@@ -73,10 +73,7 @@ export default function History() {
     setExpanded(prev => ({ ...prev, [goalId]: !prev[goalId] }));
   };
 
-  const totalCompleted = useMemo(() => history.reduce((count, goal) => {
-    const routes = (goal.metadata || []).flatMap(m => m.route || []);
-    return count + routes.filter(r => r.done).length;
-  }, 0), [history]);
+  const totalCompleted = useMemo(() => history.length, [history]);
 
   if (!user?.id) {
     return <div className="p-6">Please sign in to view history.</div>;
