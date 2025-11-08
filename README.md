@@ -12,7 +12,16 @@ React + Vite frontend for an AI-powered career coach. Key features include CV an
    ```bash
    npm run dev
    ```
-3. Backend: ensure the API is available at `http://localhost:8080` (configurable in `src/api/axiosClient.js`).
+3. Backend: ensure the API is available at `http://localhost:8080` (default for development).
+   
+   To configure a custom API URL, create a `.env` file:
+   ```
+   VITE_API_URL=http://your-api-url.com
+   ```
+   
+   The API URL defaults to:
+   - Development: `http://localhost:8080`
+   - Production: Update the production URL in `src/api/axiosClient.js` or set `VITE_API_URL` in your production environment.
 
 Optional:
 ```bash
